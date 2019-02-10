@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible"
+          content="ie=edge" />
+    <title>Document</title>
+</head>
+
+<body>
+    <canvas width="1100px"
+            height="1000px"
+            id="main-canvas"></canvas>
+
+    <script>
+        var DEBUG = true;
+
+        var canvas = document.getElementById("main-canvas");
+        var ctx = canvas.getContext("2d");
+m
+        var mouseDown = false;
+
+        window.onload = function () {
+            canvas.onmousemove = function (ev) {
+                //console.log(ev.x, ev.y);
+
+                mouseTracker.x = ev.x;
+                mouseTracker.y = ev.y;
+
+                if (mouseDown) {
+                    voltageSlider.updateSliderPosition(ev.x, ev.y);
+                    resistanceSlider.updateSliderPosition(ev.x, ev.y);
+                    capacitanceSlider.updateSliderPosition(ev.x, ev.y);
+                }
+            };
+
+            canvas.onmousedown = function () {
+                mouseDown = true;
+            };
+
+            canvas.onmouseup = function () {
+                mouseDown = false;
+            };
+
+            setInterval(() => {
+                drawUi();
+            }, 100);
+        };
+
+        function drawUi() {
+            background.draw();
+            circuit.draw();
+            bulb.draw();
+            resistance.draw();
+            voltage.draw();
+            capacitance.draw();
+            voltageSlider.draw();
+            resistanceSlider.draw();
+            capacitanceSlider.draw();
+
+
+            if (DEBUG) {
+                mouseTracker.draw();
+            }
+        }
+
+        var mouseTracker = {
+            x: null,
+            y: null,
+            draw: function () {
+                ctx.fillText(this.x + " " + this.y, 10, 20);
+            },
+        }
+
+        var background = {
+            offsetx: 30,
+            offsety: 30,
+            draw: function () {
+                ctx.fillStyle = "#000000";
+                ctx.strokeStyle = "#000000";
+                ctx.lineWidth = 2;
+
+                ctx.rect(0, 0, canvas.clientWidth, canvas.clientHeight);
+                ctx.fill();
+            }
+        };
+
+        var circuit = {
+            offsetx: 30,
+            offsety: 30,
+            draw: function () {
+                ctx.strokeStyle = "#fcff86";
+                ctx.fillStyle = "#fcff86";
+                ctx.lineWidth = 2;
+
+                /* part for drawing lines */
+
+                ctx.beginPath();
+                ctx.moveTo(100, 100);
+                ctx.lineTo(700, 100);
+                ctx.lineTo(700, 400);
+                ctx.lineTo(100, 400);
+                ctx.closePath();
+                ctx.stroke();
+            }
+        };
+
+        var bulb = {
+            offsetx: 0,
+            offsety: 0,
+            draw: function () {
+                /* drawing bulb */
+                var radius = getPower() / 10;
+                ctx.beginPath();
+                ctx.arc(this.offsetx + 700, this.offsety + 250, radius, 0, 2 * Math.PI, true);
+                ctx.fill();
+
+                ctx.font = "30px Verdana";
+                ctx.fillText("B", this.offsetx + 720, this.offsety + 250);
+            }
+        };
+
+        var resistance = {
+            offsetx: 0,
+            offsety: 0,
+            value: 80,
+            draw: function () {
+                ctx.strokeStyle = "#fcff86";
+                ctx.fillStyle = "#fcff86";
+                ctx.lineWidth = 2;
+                /* drawing resistance */
+
+                ctx.font = "30px Verdana";
+                ctx.fillText("R", 370, this.offsety + 65);
+
+                ctx.rect(360, this.offsety + 85, 70, 30);
+                ctx.fill();
+
+
+
+                ctx.font = "20px Verdana";
+                ctx.fillText(resistanceSlider.getSetValue(resistance.value).toFixed(2) + " ohm", this.offsetx + 447, this.offsety + 70);
+                
+            }
+        };
+
+        var voltage = {
+            offsetx: 0,
+            offsety: 0,
+            value: 100,
+            draw: function () {
+                ctx.strokeStyle = "#fcff86";
+                ctx.fillStyle = "#fcff86";
+                ctx.lineWidth = 2;
+                /* drawing voltage */
+
+                ctx.beginPath();
+                ctx.moveTo(this.offsetx + 80, this.offsety + 250);
+                ctx.lineTo(this.offsetx + 120, this.offsety + 250);
+                ctx.moveTo(this.offsetx + 90, this.offsety + 260);
+                ctx.lineTo(this.offsetx + 110, this.offsety + 260);
+                ctx.stroke();
+
+                ctx.font = "30px Verdana";
+                ctx.fillText("V", this.offsetx + 60, this.offsety + 230);
+
+                ctx.font = "20px Verdana";
+                ctx.fillText(voltageSlider.getSetValue(voltage.value).toFixed(2) + " V", this.offsetx + 120, this.offsety + 230);
+                
+
+            }
+        };
+
+
+        var capacitance = {
+            offsetx: 0,
+            offsety: 90,
+            value: 100,
+            draw: function () {
+                ctx.strokeStyle = "#fcff86";
+                ctx.fillStyle = "#fcff86";
+                ctx.lineWidth = 2;
+                /* drawing voltage */
+
+                ctx.beginPath();
+                ctx.moveTo(this.offsetx + 80, this.offsety + 250);
+                ctx.lineTo(this.offsetx + 120, this.offsety + 250);
+                ctx.moveTo(this.offsetx + 80, this.offsety + 260);
+                ctx.lineTo(this.offsetx + 120, this.offsety + 260);
+                ctx.stroke();
+
+                ctx.font = "30px Verdana";
+                ctx.fillText("C", this.offsetx + 60, this.offsety + 230);
+
+                ctx.font = "20px Verdana";
+                ctx.fillText(capacitanceSlider.getSetValue(capacitance.value).toFixed(2) + " henry", this.offsetx + 120, this.offsety + 230);
+                
+
+            }
+        };
+
+
+        var voltageSlider = {
+            offsetx: 30,
+            offsety: 30,
+            rangeStart: 191,
+            rangeEnd: 529,
+            sliderPosition: 191,
+            updateSliderPosition: function (position, y) {
+                if ((y > this.offsety + 538 && y < this.offsety + 578) && (position - this.offsetx > this.rangeStart &&
+                        position - this.offsetx < this.rangeEnd)) {
+                    this.sliderPosition = position - this.offsetx;
+                }
+            },
+            getSetValue: function (range) {
+
+                var multiplier = (this.sliderPosition - this.rangeStart) / (this.rangeEnd - this.rangeStart);
+
+
+                return range * multiplier;
+            },
+            draw: function () {
+                ctx.strokeStyle = "#fcff86";
+                ctx.fillStyle = "#fcff86";
+                ctx.lineWidth = 2;
+                /* voltage slider */
+                ctx.beginPath();
+                ctx.moveTo(this.offsetx + 191, this.offsety + 558);
+                ctx.lineTo(this.offsetx + 529, this.offsety + 558);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.lineWidth = 10;
+                ctx.strokeStyle = 20;
+                ctx.moveTo(this.offsetx + this.sliderPosition, this.offsety + 548);
+                ctx.lineTo(this.offsetx + this.sliderPosition, this.offsety + 568);
+                ctx.stroke();
+
+                /* draw label*/
+                ctx.font = "20px Verdana";
+                ctx.fillText("Resistance", this.offsetx + 35, this.offsety + 690);
+
+            }
+        };
+
+        var resistanceSlider = {
+            offsetx: 30,
+            offsety: 130,
+            rangeStart: 191,
+            rangeEnd: 529,
+            sliderPosition: 191,
+
+            /* data */
+            label: "Resistance",
+
+            updateSliderPosition: function (position, y) {
+                if ((y > this.offsety + 568 && y < this.offsety + 608) && (position - this.offsetx >= this.rangeStart &&
+                        position - this.offsetx <= this.rangeEnd)) {
+                    this.sliderPosition = position - this.offsetx;
+                }
+            },
+            getSetValue: function (range) {
+                var multiplier = (this.sliderPosition - this.rangeStart) / (this.rangeEnd - this.rangeStart);
+                return range * multiplier;
+            },
+            draw: function () {
+                ctx.strokeStyle = "#fcff86";
+                ctx.fillStyle = "#fcff86";
+                ctx.lineWidth = 2;
+                /* voltage slider */
+                ctx.beginPath();
+                ctx.moveTo(this.offsetx + this.rangeStart, this.offsety + 588);
+                ctx.lineTo(this.offsetx + this.rangeEnd, this.offsety + 588);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.lineWidth = 10;
+                ctx.strokeStyle = 20;
+                ctx.moveTo(this.offsetx + this.sliderPosition, this.offsety + 578);
+                ctx.lineTo(this.offsetx + this.sliderPosition, this.offsety + 598);
+                ctx.stroke();
+
+
+                /* draw label*/
+                ctx.font = "20px Verdana";
+                ctx.fillText("Voltage", this.offsetx + 35, this.offsety + 460);
+
+            }
+        };
+
+        
+        var capacitanceSlider = {
+            offsetx: 30,
+            offsety: 290,
+            rangeStart: 191,
+            rangeEnd: 529,
+            sliderPosition: 191,
+            updateSliderPosition: function (position, y) {
+                if ((y > this.offsety + 538 && y < this.offsety + 578) && (position - this.offsetx > this.rangeStart &&
+                        position - this.offsetx < this.rangeEnd)) {
+                    this.sliderPosition = position - this.offsetx;
+                }
+            },
+            getSetValue: function (range) {
+
+                var multiplier = (this.sliderPosition - this.rangeStart) / (this.rangeEnd - this.rangeStart);
+
+
+                return range * multiplier;
+            },
+            draw: function () {
+                ctx.strokeStyle = "#fcff86";
+                ctx.fillStyle = "#fcff86";
+                ctx.lineWidth = 2;
+                /* voltage slider */
+                ctx.beginPath();
+                ctx.moveTo(this.offsetx + 191, this.offsety + 558);
+                ctx.lineTo(this.offsetx + 529, this.offsety + 558);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.lineWidth = 10;
+                ctx.strokeStyle = 20;
+                ctx.moveTo(this.offsetx + this.sliderPosition, this.offsety + 548);
+                ctx.lineTo(this.offsetx + this.sliderPosition, this.offsety + 568);
+                ctx.stroke();
+
+                /* draw label*/
+                ctx.font = "20px Verdana";
+                ctx.fillText("Capacitance", this.offsetx + 35, this.offsety + 560);
+
+            }
+        };
+
+
+        function getPower() {
+            var power = (voltageSlider.getSetValue(voltage.value) * voltageSlider.getSetValue(voltage.value)) /
+                resistanceSlider.getSetValue(resistance.value);
+            //console.log(voltageSlider.getSetValue(voltage.value),resistanceSlider.getSetValue(resistance.value));
+            return power;
+        }
+
+    </script>
+</body>
+
+</html>
